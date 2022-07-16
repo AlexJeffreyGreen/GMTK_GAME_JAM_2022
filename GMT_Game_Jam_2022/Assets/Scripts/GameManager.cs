@@ -9,6 +9,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
@@ -21,7 +22,8 @@ public class GameManager : MonoBehaviour
     public TileBase _selectorTile;
     public TileBase _groundTile;
     public TileBase _tilledTile;
-    public TileBase _grassTile;
+    public TileBase _emptyDiceTile;
+    public TileBase _growthTile;
     public TileBase[] _d6Dice;
 
     //public TileBase[] _carrots;
@@ -29,12 +31,38 @@ public class GameManager : MonoBehaviour
     private DiceTile _diceTilePrefab;
     public List<DiceTile> DiceCollection;
 
+    [SerializeField]
+    private TextMeshProUGUI AttackDisplay;
+    [SerializeField]
+    private TextMeshProUGUI DefenseDisplay;
+    //[SerializeField]
+    //public int TotalDiceLeft;
+    //TEMP
+    private bool GameOver { get; set; } = false;
+
+    [SerializeField]
+    private TextMeshProUGUI HeroHPDisplay;
+    [SerializeField]
+    private Image HeroFace;
+    [SerializeField]
+    private Sprite[] HeroFaces;
+    private bool UpdateFace = false;
+    [SerializeField]
+    private int HeroHP = 0;
+    //public int TotalAttack = 0;
+    //public int TotalDefense = 0;
+
+
     //public DialogManager DialogManager;
     //public int HeroCurrentLevel;
     //public TextMeshProUGUI PlayerLevel;
-    
+
     //[SerializeField]
     //private List<DialogQuestScriptableObject> dialogQuestScriptableObjects;
+
+    [SerializeField]
+    private List<Vector3Int> SpawnPoints;
+
 
     private void Awake()
     {
@@ -57,24 +85,6 @@ public class GameManager : MonoBehaviour
        // this.test(); 
     }
 
-    //void test()
-    //{ 
-    //    for (int i = 0; i < 10; i++)
-    //    {
-    //        DialogBase dialogB;
-    //        DialogQuestScriptableObject dialogQuestScriptableObject = this.GetRandomDialog();
-    //        if (i % 2 == 0)
-    //        {
-    //            dialogB = DialogFactory.Create<QuestDialog>(dialogQuestScriptableObject);
-    //        }
-    //        else
-    //        {
-    //            dialogB = DialogFactory.Create<ConversationDialog>(dialogQuestScriptableObject);
-    //        }
-
-    //        DialogManager.EnqueueDialog(dialogB);
-    //    }
-    //}
     Vector3Int CurrentPosition
     {
         get
@@ -86,22 +96,83 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         //Vector3Int gridPos = this.GetPositionInGrid();
-
+        this.RollDice();
         this.MouseMovement();
         this.MouseInput();
-        this.UpdateFarmableTiles();
+        this.UpdateDiceGrowth();
+        this.UpdateDefenseDisplay();
+        this.UpdateAttackDisplay();
+        this.UpdateHeroDisplay();
+        if (this.HeroHP <= 0)
+        {
+            Debug.Log("Game Over");
+        }
+        //if (this.GameOver)
+        //{
+        //    Debug.Log("Game Over");
+        //}
         //this.UpdateHeroUI();
     }
 
-    private void UpdateFarmableTiles()
+    private void RollDice()
     {
-        //foreach(FarmableObject obj in this.FarmableObjCollection)
-        //{
-        //    //this._plantTileMap.SetTile(obj.Position, this._carrots[obj.CurrentLife]);
-        //    //this._diceTileMap.SetTile(this._d6Dice[0])
-        //    Debug.Log($"Farmable: {obj.Name} - {obj.Position} - Life: {obj.CurrentLife}");
+        foreach(Vector3Int vector3Int in this.SpawnPoints)
+        {
+            if (!this._diceTileMap.HasTile(vector3Int))
+            {
+                DiceTile diceTile = Instantiate(this._diceTilePrefab, this._diceTileMap.transform);
+                DiceData data = this.GetRandomDiceData(vector3Int);
+                diceTile.SetTileDetails(data);
+                this.DiceCollection.Add(diceTile);
+                this._diceTileMap.SetTile(vector3Int, this._emptyDiceTile);
+                this.UpdateFace = true;
+                StartCoroutine(diceTile.GrowDice());
+            }
+        }
+    }
 
-        //}
+    private void UpdateDiceGrowth()
+    {
+        List<DiceTile> tmp = new List<DiceTile>();
+        foreach(DiceTile tile in this.DiceCollection)
+        {
+            if (tile.DiceData.Age <= 1 && tile.DiceData.Age < tile.DiceData.MaxLifeSpan)
+            {
+                this._diceTileMap.SetTile(tile.DiceData.Position, this._growthTile);
+            }
+            else if (tile.DiceData.Age == 2 && tile.DiceData.Age < tile.DiceData.MaxLifeSpan)
+            {
+                this._diceTileMap.SetTile(tile.DiceData.Position, tile.DiceData.Tile);
+            }
+            else if (tile.DiceData.Age >= tile.DiceData.MaxLifeSpan)
+            {
+                tmp.Add(tile);
+                this._diceTileMap.SetTile(tile.DiceData.Position, null);
+            }
+        }
+        if (tmp.Count > 0)
+        {
+            this.DiceCollection.RemoveAll(x=>tmp.Contains(x));
+            tmp.ForEach(x=>Destroy(x.gameObject));
+        }
+    }
+
+    public void ClearAllSelectedDice()
+    {
+        List<DiceTile> tmp = new List<DiceTile>();
+        foreach (DiceTile tile in this.DiceCollection)
+        {
+            if (tile.isSelected)
+            {
+                tmp.Add(tile);
+                this._diceTileMap.SetTile(tile.DiceData.Position, null);
+            }
+        }
+        if (tmp.Count > 0)
+        {
+            this.DiceCollection.RemoveAll(x => tmp.Contains(x));
+            tmp.ForEach(x => Destroy(x.gameObject));
+        }
     }
 
     void MouseMovement()
@@ -120,27 +191,69 @@ public class GameManager : MonoBehaviour
     }
 
     void MouseInput()
-    { 
+    {
+       // Debug.Log($"Pos: {this.CurrentPosition.x} - {this.CurrentPosition.y}");
         if (Input.GetMouseButtonDown(0))
         {
-            if (this._groundTileMap.HasTile(this.CurrentPosition))
+            if (this.HeroHP >= 1)
             {
-                if (!this.DiceCollection.Select(x=>x.Position).Contains(this.CurrentPosition))
+                if (this._groundTileMap.HasTile(this.CurrentPosition))
                 {
-                    DiceTile diceTile = Instantiate(this._diceTilePrefab, this._diceTileMap.transform);
-                    DiceData data = this.GetRandomDiceData("d6");
-                    diceTile.SetTileDetails(this.CurrentPosition, data.Name, data.Value);
-                    this._diceTileMap.SetTile(this.CurrentPosition, data.Tile);
+                    DiceTile tile = this.DiceCollection.Where(x => x.DiceData.Position == this.CurrentPosition).FirstOrDefault();
+                    if (tile != null)
+                    {
+                        if ((tile.DiceData.Age >= 2))
+                        {
+                            Debug.Log($"Clicked: {tile.DiceData.Value}");
+                            tile.isSelected = !tile.isSelected;
+                            this._diceTileMap.RemoveTileFlags(this.CurrentPosition, TileFlags.LockColor);
+                            var a = this._diceTileMap.GetTileFlags(this.CurrentPosition);
+                            if (tile.isSelected)
+                            {
+                                tile.DiceData.Mode = Mode.ATK;
+                                _diceTileMap.SetColor(tile.DiceData.Position, Color.red);
+                            }
+                            else
+                            {
+                                tile.DiceData.Mode = Mode.NONE;
+                                _diceTileMap.SetColor(tile.DiceData.Position, Color.white);
+                            }
+
+                        }
+                    }
+
                 }
-                //this._plantTileMap.SetTile(this.CurrentPosition, _tilledTile);
             }
         }
         if (Input.GetMouseButtonDown(1))
         {
-           // if (this._groundTileMap.HasTile(this.CurrentPosition))
-           // {
-           //     this._plantTileMap.SetTile(this.CurrentPosition, _grassTile);
-           // }
+            if (this.HeroHP >= 1)
+            {
+                if (_groundTileMap.HasTile(this.CurrentPosition))
+                {
+                    DiceTile tile = this.DiceCollection.Where(x => x.DiceData.Position == this.CurrentPosition).FirstOrDefault();
+                    if (tile != null)
+                    {
+                        if ((tile.DiceData.Age >= 2))
+                        {
+                            Debug.Log($"Clicked: {tile.DiceData.Value}");
+                            tile.isSelected = !tile.isSelected;
+                            this._diceTileMap.RemoveTileFlags(this.CurrentPosition, TileFlags.LockColor);
+                            var a = this._diceTileMap.GetTileFlags(this.CurrentPosition);
+                            if (tile.isSelected)
+                            {
+                                tile.DiceData.Mode = Mode.DEF;
+                                _diceTileMap.SetColor(tile.DiceData.Position, Color.cyan);
+                            }
+                            else
+                            {
+                                tile.DiceData.Mode = Mode.NONE;
+                                _diceTileMap.SetColor(tile.DiceData.Position, Color.white);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -150,53 +263,82 @@ public class GameManager : MonoBehaviour
         return this._groundTileMap.WorldToCell(mousePos);
     }
 
-    //void inputTest()
-    //{
-    //    DialogBase b = this.DialogManager.DequeueDialog();
-    //    if (b != null)
-    //    {
-    //        DialogManager.GetComponentInChildren<TextMeshProUGUI>().text = b.Message;
-    //    }
-    //    else
-    //    {
-    //        DialogManager.GetComponentInChildren<TextMeshProUGUI>().text = "";
-    //    }
-    //}
 
-    ////TODO: Take into consideration levels and such
-    ///// <summary>
-    ///// Get Random Dialog from Scriptables
-    ///// </summary>
-    ///// <returns></returns>
-    //public DialogQuestScriptableObject GetRandomDialog()
-    //{
-    //    return dialogQuestScriptableObjects[Random.Range(0, dialogQuestScriptableObjects.Count - 1)];
-    //}
-
-    //private void UpdateHeroUI()
-    //{
-    //    this.PlayerLevel.text = "Level: " + HeroCurrentLevel.ToString();
-    //}
-
-    DiceData GetRandomDiceData(string name)
+    DiceData GetRandomDiceData(Vector3Int pos)
     {
         DiceData diceData = new DiceData();
-        switch (name)
-        {
-            case "d6":
-                diceData.Value = Random.Range(1, 6);
-                diceData.Name = $"D6 - {diceData.Value}";
-                diceData.Tile = this._d6Dice.First();
-                break;
-        }
+        diceData.Value = Random.Range(1, 6);
+        diceData.Age = 0;
+        diceData.MaxLifeSpan = Random.Range(4, 8);
+        diceData.Name = $"D6 - {diceData.Value}";
+        diceData.Tile = this._d6Dice[diceData.Value - 1];
+        diceData.Position = pos;
         return diceData;
     }
 
-}
+    private void UpdateDefenseDisplay()
+    {
+        this.DefenseDisplay.text = $"DEF: {TotalDefense.ToString()}";
+    }
 
+    private void UpdateAttackDisplay()
+    {
+        this.AttackDisplay.text = $"ATK: {TotalAttack.ToString()}";
+    }
+
+    private void UpdateHeroDisplay()
+    {
+        if (this.HeroHP <= 0)
+        {
+            this.HeroFace.sprite = this.HeroFaces[this.HeroFaces.Length-1];
+            this.UpdateFace = false;
+        }
+        else if (this.HeroHP % 2 == 0 && this.UpdateFace)
+        {
+            this.HeroFace.sprite = this.HeroFaces[Random.Range(0, this.HeroFaces.Length-1)];
+            this.UpdateFace = false;
+        }
+        this.HeroHPDisplay.text = $"HP: {HeroHP.ToString()}";
+    }
+    public int TotalValue
+    {
+        get
+        {
+            return DiceCollection.Where(y => y.isSelected).Select(x => x.DiceData.Value).Sum();
+        }
+    }
+
+    public int TotalDefense
+    {
+        get
+        {
+            return DiceCollection.Where(y => y.isSelected & y.DiceData.Mode == Mode.DEF).Select(x => x.DiceData.Value).Sum();
+        }
+    }
+
+    public int TotalAttack
+    {
+        get
+        {
+            return DiceCollection.Where(y => y.isSelected & y.DiceData.Mode == Mode.ATK).Select(x => x.DiceData.Value).Sum();
+        }
+    }
+
+}
+public enum Mode
+{
+    ATK,
+    DEF,
+    NONE
+}
 public class DiceData
 {
     public string Name { get; set; }
     public int Value { get; set; }
     public TileBase Tile { get; set; }
+    public Vector3Int Position { get; set; }
+    public int Age { get; set; }
+    public int MaxLifeSpan { get; set; }
+    public Mode Mode { get; set; } = Mode.NONE;
+
 }

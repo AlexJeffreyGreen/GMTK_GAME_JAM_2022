@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,11 +11,8 @@ namespace Assets.Scripts.Dice
 {
     public class DiceTile : MonoBehaviour
     {
-        public string DiceType { get; private set; }
-
-        public int DiceValue { get;private set; }
-        public Vector3Int Position { get; private set; }
-        public int CurrentLife { get; private set; } = 0;
+        public bool isSelected { get; set; }
+        public DiceData DiceData { get;private set; }
 
         private void Awake()
         {
@@ -26,11 +24,30 @@ namespace Assets.Scripts.Dice
             
         }
 
-        public void SetTileDetails(Vector3Int position, string diceType, int val)
+        public void SetTileDetails(DiceData diceData)
         {
-            this.Position = position;
-            this.DiceType = diceType;
-            this.DiceValue = val;
+           this.DiceData = diceData;
+        }
+
+        /// <summary>
+        /// Grow dice from 0 - 7
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerator GrowDice()
+        {
+            while (this.DiceData.Age <= this.DiceData.MaxLifeSpan)
+            {
+                yield return new WaitForSeconds(1.0f);
+                if (!this.isSelected)
+                {
+                    this.DiceData.Age++;
+                }
+            }
+        }
+
+        public Tile GetTile()
+        {
+            return this.DiceData.Tile as Tile;
         }
     }
 

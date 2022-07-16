@@ -1,48 +1,56 @@
-﻿using Assets.Scripts.Scriptables;
-using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using TMPro;
+using UnityEngine;
 
-namespace Assets.Scripts.Quests
+public class Quest : MonoBehaviour
 {
-    public class Quest
+    [SerializeField]
+    private TextMeshProUGUI _defDisplay;
+    [SerializeField]
+    private TextMeshProUGUI _atkDisplay;
+    private int _atkRequirement;
+    private int _defRequirement;
+    // Start is called before the first frame update
+    void Start()
     {
-        public int LevelRequirement { get; private set; }
-        private Queue<DialogQuestScriptableObject> QuestItems = new Queue<DialogQuestScriptableObject>();
-        public bool Success = false;
+        this.GenerateRandomQuest();
+    }
 
-        public Quest()
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
+
+    public void GenerateRandomQuest()
+    {
+        this._defRequirement = Random.Range(1, 18);
+        this._atkRequirement = Random.Range(1, 18);
+        this._defDisplay.text = $"DEF: {this._defRequirement.ToString()}";
+        this._atkDisplay.text = $"ATK: {this._atkRequirement.ToString()}";
+    }
+
+    public void CompleteQuest()
+    {
+        if (this._defRequirement <= GameManager.instance.TotalDefense
+            && this._atkRequirement <= GameManager.instance.TotalAttack)
         {
-
+            //int tmp = _valueRequirement / 2;
+            //if (tmp <= 0) tmp = 1;
+            //GameManager.instance.TotalDiceLeft += tmp;
+            GameManager.instance.ClearAllSelectedDice();
+            this.GenerateRandomQuest();
         }
-
-        public void Execute()
-        {
-
-        }
-
-        public void CalculateQuestLevelRequirements()
-        {
-            List<DialogQuestScriptableObject> items = this.QuestItems.ToList();
-            for(int i = 0; i < QuestItems.Count; i++)
-            {
-                DialogQuestScriptableObject item = items[i];
-                this.LevelRequirement += item.LevelInc;
-
-            }
-        }
-
-        public void AddQuestItem(DialogQuestScriptableObject item)
-        {
-            QuestItems.Enqueue(item);
-        }
-
-        public DialogQuestScriptableObject RemoveQuestItem()
-        {
-            return QuestItems.Dequeue();
-        }
-
+        else { }
     }
 }
+
+//public static class SideQuests
+//{
+//    public static List<string> SideQuestCollection = new List<string>()
+//    {
+//        "Roll a 6",
+//        "Roll a 14"
+//    };
+//}
