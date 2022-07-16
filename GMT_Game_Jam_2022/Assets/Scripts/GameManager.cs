@@ -1,4 +1,5 @@
 using Assets.Scripts.Dialogs;
+using Assets.Scripts.Dice;
 using Assets.Scripts.Farmables;
 using Assets.Scripts.Scriptables;
 using System;
@@ -8,6 +9,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
@@ -15,13 +17,17 @@ public class GameManager : MonoBehaviour
     public Tilemap _groundTileMap;
     public Tilemap _plantTileMap;
     public Tilemap _selectorTileMap;
+    public Tilemap _diceTileMap;
     public TileBase _selectorTile;
     public TileBase _groundTile;
     public TileBase _tilledTile;
     public TileBase _grassTile;
+    public TileBase[] _d6Dice;
 
-    public TileBase[] _carrots;
-    public List<FarmableObject> FarmableObjCollection;
+    //public TileBase[] _carrots;
+    [SerializeField]
+    private DiceTile _diceTilePrefab;
+    public List<DiceTile> DiceCollection;
 
     //public DialogManager DialogManager;
     //public int HeroCurrentLevel;
@@ -38,7 +44,7 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         DontDestroyOnLoad(gameObject);
 
-        this.FarmableObjCollection = new List<FarmableObject>();
+        this.DiceCollection = new List<DiceTile>();
 
         //this._groundTile.jas
 
@@ -89,12 +95,13 @@ public class GameManager : MonoBehaviour
 
     private void UpdateFarmableTiles()
     {
-        foreach(FarmableObject obj in this.FarmableObjCollection)
-        {
-            this._plantTileMap.SetTile(obj.Position, this._carrots[obj.CurrentLife]);
-            Debug.Log($"Farmable: {obj.Name} - {obj.Position} - Life: {obj.CurrentLife}");
+        //foreach(FarmableObject obj in this.FarmableObjCollection)
+        //{
+        //    //this._plantTileMap.SetTile(obj.Position, this._carrots[obj.CurrentLife]);
+        //    //this._diceTileMap.SetTile(this._d6Dice[0])
+        //    Debug.Log($"Farmable: {obj.Name} - {obj.Position} - Life: {obj.CurrentLife}");
 
-        }
+        //}
     }
 
     void MouseMovement()
@@ -118,25 +125,22 @@ public class GameManager : MonoBehaviour
         {
             if (this._groundTileMap.HasTile(this.CurrentPosition))
             {
-                if (!this.FarmableObjCollection.Select(x=>x.Position).Contains(this.CurrentPosition))
+                if (!this.DiceCollection.Select(x=>x.Position).Contains(this.CurrentPosition))
                 {
-                    FarmableObject farmableObject = new FarmableObject("Carrot", this.CurrentPosition, 3);
-                    //this.FarmableObjCollection.Add(Instantiate())
-                    this.FarmableObjCollection.Add(farmableObject);
-
-                    StartCoroutine(farmableObject.Growth());
-
-                    
+                    DiceTile diceTile = Instantiate(this._diceTilePrefab, this._diceTileMap.transform);
+                    DiceData data = this.GetRandomDiceData("d6");
+                    diceTile.SetTileDetails(this.CurrentPosition, data.Name, data.Value);
+                    this._diceTileMap.SetTile(this.CurrentPosition, data.Tile);
                 }
-                this._plantTileMap.SetTile(this.CurrentPosition, _tilledTile);
+                //this._plantTileMap.SetTile(this.CurrentPosition, _tilledTile);
             }
         }
         if (Input.GetMouseButtonDown(1))
         {
-            if (this._groundTileMap.HasTile(this.CurrentPosition))
-            {
-                this._plantTileMap.SetTile(this.CurrentPosition, _grassTile);
-            }
+           // if (this._groundTileMap.HasTile(this.CurrentPosition))
+           // {
+           //     this._plantTileMap.SetTile(this.CurrentPosition, _grassTile);
+           // }
         }
     }
 
@@ -174,4 +178,25 @@ public class GameManager : MonoBehaviour
     //    this.PlayerLevel.text = "Level: " + HeroCurrentLevel.ToString();
     //}
 
+    DiceData GetRandomDiceData(string name)
+    {
+        DiceData diceData = new DiceData();
+        switch (name)
+        {
+            case "d6":
+                diceData.Value = Random.Range(1, 6);
+                diceData.Name = $"D6 - {diceData.Value}";
+                diceData.Tile = this._d6Dice.First();
+                break;
+        }
+        return diceData;
+    }
+
+}
+
+public class DiceData
+{
+    public string Name { get; set; }
+    public int Value { get; set; }
+    public TileBase Tile { get; set; }
 }
