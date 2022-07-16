@@ -18,6 +18,11 @@ namespace Assets.Scripts.Quests
 
         }
 
+        public void Execute()
+        {
+
+        }
+
         public void CalculateQuestLevelRequirements()
         {
             List<DialogQuestScriptableObject> items = this.QuestItems.ToList();

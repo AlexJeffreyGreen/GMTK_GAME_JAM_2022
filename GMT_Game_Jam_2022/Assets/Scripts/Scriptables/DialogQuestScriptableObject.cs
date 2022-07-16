@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.Scriptables
 {
-    [CreateAssetMenu(fileName = "DialogQuestScriptable", menuName = "Assets/Dialogs/QuestDialogScriptable")]
+    [CreateAssetMenu(fileName = "DialogQuestScriptable", menuName = "Dialogs/QuestDialogScriptable")]
     public class DialogQuestScriptableObject : ScriptableObject
     {
         public string Title;

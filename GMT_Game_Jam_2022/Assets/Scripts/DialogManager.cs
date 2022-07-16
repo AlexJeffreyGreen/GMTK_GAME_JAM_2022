@@ -2,6 +2,7 @@ using Assets.Scripts.Dialogs;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class DialogManager : MonoBehaviour
 {
@@ -11,6 +12,10 @@ public class DialogManager : MonoBehaviour
     [SerializeField]
     private Dialog _dialogPrefab;
     private Queue<DialogBase> dialogList;
+    [SerializeField]
+    private Button AcceptButton;
+    [SerializeField]
+    private Button RejectButton;
 
     void Start()
     {
@@ -38,7 +43,17 @@ public class DialogManager : MonoBehaviour
 
     public void DeleteAllExistingDialogs()
     {
-        while(this.dialogList.Count > 0)
+        while (this.dialogList.Count > 0)
             this.dialogList.Dequeue();
+    }
+
+    public void AcceptClick()
+    {
+        Debug.Log("Accept");
+    }
+
+    public void RejectClick()
+    {
+        Debug.Log("Reject");
     }
 }
