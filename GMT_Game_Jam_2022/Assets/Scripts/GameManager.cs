@@ -47,18 +47,7 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private Sprite[] HeroFaces;
     private bool UpdateFace = false;
-    [SerializeField]
-    private int HeroHP = 0;
-    //public int TotalAttack = 0;
-    //public int TotalDefense = 0;
-
-
-    //public DialogManager DialogManager;
-    //public int HeroCurrentLevel;
-    //public TextMeshProUGUI PlayerLevel;
-
-    //[SerializeField]
-    //private List<DialogQuestScriptableObject> dialogQuestScriptableObjects;
+    public int HeroHP;
 
     [SerializeField]
     private List<Vector3Int> SpawnPoints;
@@ -69,6 +58,11 @@ public class GameManager : MonoBehaviour
     private Button AttackButton;
     [SerializeField]
     public Button DefenseButton;
+
+    [SerializeField]
+    private Slider HealthSlider;
+    [SerializeField]
+    private Slider QuestSlider;
 
 
     private void Awake()
@@ -81,6 +75,7 @@ public class GameManager : MonoBehaviour
 
         this.DiceCollection = new List<DiceTile>();
 
+
         //this._groundTile.jas
 
         //this.HeroCurrentLevel = 5;
@@ -88,8 +83,10 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        this.HealthSlider.maxValue = 100;
+        this.HealthSlider.minValue = 0;
 
-       // this.test(); 
+        // this.test(); 
     }
 
     Vector3Int CurrentPosition
@@ -103,16 +100,18 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         //Vector3Int gridPos = this.GetPositionInGrid();
+        this.CurrentQuest = GameObject.FindObjectOfType<Quest>();
         this.RollDice();
         this.MouseMovement();
         this.MouseInput();
         this.UpdateDiceGrowth();
         this.UpdateDefenseDisplay();
         this.UpdateAttackDisplay();
-        this.UpdateHeroDisplay();
+        this.UpdateHPSlider();
         if (this.HeroHP <= 0)
         {
             Debug.Log("Game Over");
+            //load game over
         }
         //if (this.GameOver)
         //{
@@ -293,19 +292,41 @@ public class GameManager : MonoBehaviour
         this.AttackDisplay.text = $"{TotalAttack.ToString()}";
     }
 
-    private void UpdateHeroDisplay()
+    /// <summary>
+    /// Pure laziness
+    /// </summary>
+    private void UpdateHPSlider()
     {
-        if (this.HeroHP <= 0)
+        this.HealthSlider.value = this.HeroHP;
+        if (this.HeroHP >= 90)
         {
-            this.HeroFace.sprite = this.HeroFaces[this.HeroFaces.Length-1];
-            this.UpdateFace = false;
+            this.HeroFace.sprite = this.HeroFaces[0];
         }
-        else if (this.HeroHP % 2 == 0 && this.UpdateFace)
+        else if (this.HeroHP <= 89 && this.HeroHP >= 70)
         {
-            this.HeroFace.sprite = this.HeroFaces[Random.Range(0, this.HeroFaces.Length-1)];
-            this.UpdateFace = false;
+            this.HeroFace.sprite = this.HeroFaces[1];
         }
-        this.HeroHPDisplay.text = $"HP: {HeroHP.ToString()}";
+        else if (this.HeroHP <= 69 && this.HeroHP >= 60)
+        {
+            this.HeroFace.sprite = this.HeroFaces[2];
+        }
+        else if (this.HeroHP <= 59 && this.HeroHP >= 50)
+        {
+            this.HeroFace.sprite = this.HeroFaces[3];
+        }
+        else if (this.HeroHP <= 49 && this.HeroHP >= 40)
+        {
+            this.HeroFace.sprite = this.HeroFaces[4];
+        }
+        else if (this.HeroHP <= 39 && this.HeroHP >= 1)
+        {
+            this.HeroFace.sprite = this.HeroFaces[5];
+        }
+        else if (this.HeroHP <= 0)
+        {
+            this.HeroFace.sprite = this.HeroFaces.LastOrDefault();
+        }
+        
     }
     public int TotalValue
     {
@@ -334,13 +355,15 @@ public class GameManager : MonoBehaviour
     public void AttackAgainstQuest()
     {
         if (this.CurrentQuest == null) { Debug.Log("No Quest"); return; }
-        this.CurrentQuest.CompleteQuest();
+        this.CurrentQuest.AttackQuest();
     }
     public void DefendAgainstQuest()
     {
         if (this.CurrentQuest == null) { Debug.Log("No Quest"); return; }
-        this.CurrentQuest.CompleteQuest();
+        this.CurrentQuest.DefendQuest();
     }
+
+
 
 }
 public enum Mode
