@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
@@ -65,14 +66,24 @@ public class GameManager : MonoBehaviour
     private Slider QuestSlider;
     [SerializeField]
     private TextMeshProUGUI LevelText;
+    [SerializeField]
+    private TextMeshProUGUI MonsterText;
     public int CurrentLevel;
 
     public float MasterVolume;
 
     [SerializeField]
     public AudioClip _mainMusic;
-    
+    [SerializeField]
+    public AudioClip[] _attackClips;
 
+    public Sprite[] MainMonsterSprites;
+    public Slider VolumeSlider;
+
+    public bool isPaused;
+
+    [SerializeField]
+    private RectTransform _pauseMenu;
 
     private void Awake()
     {
@@ -84,7 +95,7 @@ public class GameManager : MonoBehaviour
 
         this.DiceCollection = new List<DiceTile>();
         this.CurrentLevel = 1;
-
+        this.isPaused = false;
        
         //this._groundTile.jas
 
@@ -95,7 +106,8 @@ public class GameManager : MonoBehaviour
     {
         this.HealthSlider.maxValue = 100;
         this.HealthSlider.minValue = 0;
-        this.GetComponent<AudioSource>().Play();
+        SoundManager.instance.PlayMusic(SoundManager.instance.MusicClips.First(), true, 1f);
+        //this.GetComponent<AudioSource>().Play();
         //SoundManager.PlaySound(true, this._mainMusic);
 
         // this.test(); 
@@ -112,19 +124,36 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         //Vector3Int gridPos = this.GetPositionInGrid();
-        this.CurrentQuest = GameObject.FindObjectOfType<Quest>();
-        this.RollDice();
-        this.MouseMovement();
-        this.MouseInput();
-        this.UpdateDiceGrowth();
-        this.UpdateDefenseDisplay();
-        this.UpdateAttackDisplay();
-        this.UpdateHPSlider();
-        this.UpdateCurrentLevel();
-        if (this.HeroHP <= 0)
+        if (!isPaused)
         {
-            Debug.Log("Game Over");
-            //load game over
+            this.CurrentQuest = GameObject.FindObjectOfType<Quest>();
+            this.RollDice();
+            this.MouseMovement();
+            this.MouseInput();
+            this.UpdateDiceGrowth();
+            this.UpdateDefenseDisplay();
+            this.UpdateAttackDisplay();
+            this.UpdateHPSlider();
+            this.UpdateCurrentLevel();
+            if (this.HeroHP <= 0)
+            {
+                Debug.Log("Game Over");
+                SceneManager.LoadScene("GameOver");
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            isPaused = !isPaused;
+            if (isPaused)
+            {
+                this._pauseMenu.gameObject.SetActive(true);
+                SoundManager.instance.MusicSource.Pause();
+            }
+            else
+            {
+                this._pauseMenu.gameObject.SetActive(false);
+                SoundManager.instance.MusicSource.UnPause();
+            }
         }
         //if (this.GameOver)
         //{
@@ -345,6 +374,7 @@ public class GameManager : MonoBehaviour
     public void UpdateCurrentLevel()
     {
         this.LevelText.text = $"LVL: {this.CurrentLevel.ToString()}";
+        this.MonsterText.text = $"{this.CurrentQuest.name}";
     }
     public int TotalValue
     {
@@ -374,11 +404,48 @@ public class GameManager : MonoBehaviour
     {
         if (this.CurrentQuest == null) { Debug.Log("No Quest"); return; }
         this.CurrentQuest.AttackQuest();
+        this.ClearAllSelectedDice();
     }
     public void DefendAgainstQuest()
     {
         if (this.CurrentQuest == null) { Debug.Log("No Quest"); return; }
         this.CurrentQuest.DefendQuest();
+        this.ClearAllSelectedDice();
+    }
+
+
+    public void TriggerHurtPlayer()
+    {
+        StartCoroutine(DelayRenderer());
+        SoundManager.instance.RandomSoundEffect(SoundManager.instance.EffectsClips);
+    }
+
+    IEnumerator DelayRenderer()
+    {
+        //SpriteRenderer _renderer = this.HeroFace.GetComponent<SpriteRenderer>();
+        Color originalColor = Color.white;
+        for (int i = 0; i < 5; i++)
+        {
+            this.HeroFace.color = Color.red;
+            yield return new WaitForSeconds(.15f);
+            this.HeroFace.color = Color.white;
+            yield return new WaitForSeconds(.15f);
+        }
+
+        this.HeroFace.color = originalColor;
+
+        yield return null;
+    }
+
+    public void UpdateVolume()
+    {
+        SoundManager.instance._volumeMasterLevel = this.VolumeSlider.value;
+    }
+
+    public void Quit()
+    {
+        Debug.Log("Quitting time.");
+        SceneManager.LoadScene("GameOver");
     }
 
 
