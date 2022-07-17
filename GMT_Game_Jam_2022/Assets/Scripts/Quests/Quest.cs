@@ -77,6 +77,7 @@ public class Quest : MonoBehaviour
     private void CompleteQuest()
     {
         GameManager.instance.ClearAllSelectedDice();
+        GameManager.instance.CurrentLevel++;
         this.GenerateRandomQuest();
         StopAllCoroutines();
         StartCoroutine(this.QuestAutoAttacker());

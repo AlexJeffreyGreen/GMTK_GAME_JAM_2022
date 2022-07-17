@@ -2,6 +2,7 @@ using Assets.Scripts.Dialogs;
 using Assets.Scripts.Dice;
 using Assets.Scripts.Farmables;
 using Assets.Scripts.Scriptables;
+using Assets.Scripts.Sounds;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -46,7 +47,6 @@ public class GameManager : MonoBehaviour
     private Image HeroFace;
     [SerializeField]
     private Sprite[] HeroFaces;
-    private bool UpdateFace = false;
     public int HeroHP;
 
     [SerializeField]
@@ -63,6 +63,15 @@ public class GameManager : MonoBehaviour
     private Slider HealthSlider;
     [SerializeField]
     private Slider QuestSlider;
+    [SerializeField]
+    private TextMeshProUGUI LevelText;
+    public int CurrentLevel;
+
+    public float MasterVolume;
+
+    [SerializeField]
+    public AudioClip _mainMusic;
+    
 
 
     private void Awake()
@@ -74,8 +83,9 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         this.DiceCollection = new List<DiceTile>();
+        this.CurrentLevel = 1;
 
-
+       
         //this._groundTile.jas
 
         //this.HeroCurrentLevel = 5;
@@ -85,6 +95,8 @@ public class GameManager : MonoBehaviour
     {
         this.HealthSlider.maxValue = 100;
         this.HealthSlider.minValue = 0;
+        this.GetComponent<AudioSource>().Play();
+        //SoundManager.PlaySound(true, this._mainMusic);
 
         // this.test(); 
     }
@@ -108,6 +120,7 @@ public class GameManager : MonoBehaviour
         this.UpdateDefenseDisplay();
         this.UpdateAttackDisplay();
         this.UpdateHPSlider();
+        this.UpdateCurrentLevel();
         if (this.HeroHP <= 0)
         {
             Debug.Log("Game Over");
@@ -131,7 +144,7 @@ public class GameManager : MonoBehaviour
                 diceTile.SetTileDetails(data);
                 this.DiceCollection.Add(diceTile);
                 this._diceTileMap.SetTile(vector3Int, this._emptyDiceTile);
-                this.UpdateFace = true;
+                //this.UpdateFace = true;
                 StartCoroutine(diceTile.GrowDice());
             }
         }
@@ -327,6 +340,11 @@ public class GameManager : MonoBehaviour
             this.HeroFace.sprite = this.HeroFaces.LastOrDefault();
         }
         
+    }
+
+    public void UpdateCurrentLevel()
+    {
+        this.LevelText.text = $"LVL: {this.CurrentLevel.ToString()}";
     }
     public int TotalValue
     {
