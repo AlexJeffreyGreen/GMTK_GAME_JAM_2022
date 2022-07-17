@@ -63,6 +63,13 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private List<Vector3Int> SpawnPoints;
 
+    public Quest CurrentQuest;
+
+    [SerializeField]
+    private Button AttackButton;
+    [SerializeField]
+    public Button DefenseButton;
+
 
     private void Awake()
     {
@@ -278,12 +285,12 @@ public class GameManager : MonoBehaviour
 
     private void UpdateDefenseDisplay()
     {
-        this.DefenseDisplay.text = $"DEF: {TotalDefense.ToString()}";
+        this.DefenseDisplay.text = $"{TotalDefense.ToString()}";
     }
 
     private void UpdateAttackDisplay()
     {
-        this.AttackDisplay.text = $"ATK: {TotalAttack.ToString()}";
+        this.AttackDisplay.text = $"{TotalAttack.ToString()}";
     }
 
     private void UpdateHeroDisplay()
@@ -322,6 +329,17 @@ public class GameManager : MonoBehaviour
         {
             return DiceCollection.Where(y => y.isSelected & y.DiceData.Mode == Mode.ATK).Select(x => x.DiceData.Value).Sum();
         }
+    }
+
+    public void AttackAgainstQuest()
+    {
+        if (this.CurrentQuest == null) { Debug.Log("No Quest"); return; }
+        this.CurrentQuest.CompleteQuest();
+    }
+    public void DefendAgainstQuest()
+    {
+        if (this.CurrentQuest == null) { Debug.Log("No Quest"); return; }
+        this.CurrentQuest.CompleteQuest();
     }
 
 }

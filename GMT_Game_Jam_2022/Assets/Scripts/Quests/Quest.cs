@@ -9,8 +9,8 @@ public class Quest : MonoBehaviour
     private TextMeshProUGUI _defDisplay;
     [SerializeField]
     private TextMeshProUGUI _atkDisplay;
-    private int _atkRequirement;
-    private int _defRequirement;
+    public int _atkRequirement { get; private set; }
+    public int _defRequirement { get; private set; }
     // Start is called before the first frame update
     void Start()
     {
@@ -27,8 +27,8 @@ public class Quest : MonoBehaviour
     {
         this._defRequirement = Random.Range(1, 18);
         this._atkRequirement = Random.Range(1, 18);
-        this._defDisplay.text = $"DEF: {this._defRequirement.ToString()}";
-        this._atkDisplay.text = $"ATK: {this._atkRequirement.ToString()}";
+        this._defDisplay.text = $"{this._defRequirement.ToString()}";
+        this._atkDisplay.text = $"{this._atkRequirement.ToString()}";
     }
 
     public void CompleteQuest()
@@ -42,7 +42,9 @@ public class Quest : MonoBehaviour
             GameManager.instance.ClearAllSelectedDice();
             this.GenerateRandomQuest();
         }
-        else { }
+        else { 
+            //hurt player
+        }
     }
 }
 
