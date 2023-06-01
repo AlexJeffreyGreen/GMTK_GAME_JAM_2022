@@ -1,7 +1,7 @@
 # GMTK_GAME_JAM_2022
 GMTK 2022 Game Jam
 
-Play Here:
+Play Here: https://thegameoverguy.itch.io/dice-battler
 
 
 Theme: Roll of the Dice!
